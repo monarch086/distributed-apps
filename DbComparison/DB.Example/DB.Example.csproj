@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cassandra.Repository\Cassandra.Repository.csproj" />
+    <ProjectReference Include="..\DB.DataModel\DB.DataModel.csproj" />
     <ProjectReference Include="..\DB.SharedUtils\DB.SharedUtils.csproj" />
     <ProjectReference Include="..\HBase.Repository\HBase.Repository.csproj" />
   </ItemGroup>

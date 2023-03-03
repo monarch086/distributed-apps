@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HBase.DataModel\DB.DataModel.csproj" />
+    <ProjectReference Include="..\DB.DataModel\DB.DataModel.csproj" />
   </ItemGroup>
 
 </Project>
