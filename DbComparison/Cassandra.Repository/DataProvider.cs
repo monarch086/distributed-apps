@@ -1,5 +1,6 @@
 ﻿using Cassandra.Mapping;
 using DataModel;
+using DB.SharedUtils;
 
 namespace Cassandra.Repository
 {

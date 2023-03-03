@@ -1,8 +1,8 @@
 ﻿using DataModel;
 
-namespace Cassandra.Repository
+namespace DB.SharedUtils
 {
-    internal class DataGenerator
+    public class DataGenerator
     {
         private Random Rnd => new Random();
         private string[] stores = new string[] { "A", "B", "C", "D" };
