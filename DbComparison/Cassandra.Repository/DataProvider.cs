@@ -19,6 +19,7 @@ namespace Cassandra.Repository
                 var query = @$"
                 CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
                     id int,
+                    transactionid int,
                     date timestamp,
                     store text,
                     product text,
@@ -62,22 +63,44 @@ namespace Cassandra.Repository
         {
             using (var session = Connect())
             {
-                var query = @$"INSERT INTO {TABLE_NAME} (id, date, store, product, price, quantity)
-                               VALUES (?, ?, ?, ?, ?, ?);";
+                var query = @$"INSERT INTO {TABLE_NAME} (id, transactionid, date, store, product, price, quantity)
+                               VALUES (?, ?, ?, ?, ?, ?, ?);";
 
                 var ps = session.Prepare(query);
 
                 var dates = DataGenerator.GenerateDates(total, 2015, 2022);
 
-                foreach (var counter in Enumerable.Range(1, total))
+                var recordId = 1;
+
+                foreach (var transactionId in Enumerable.Range(1, total))
                 {
-                    var record = DataGenerator.GenerateRecord(counter, dates[counter - 1]);
-                    var statement = ps.Bind(counter, record.Date, record.Store, record.Product, record.Price, record.Quantity);
+                    var transactionProductsCount = DataGenerator.GetRandomArrayElement(Enumerable.Range(1, 10).ToArray());
+                    var date = dates[transactionId - 1];
+                    var store = DataGenerator.GetRandomArrayElement(DataGenerator.STORES);
 
-                    var rs = session.Execute(statement);
+                    foreach (var product in Enumerable.Range(1, transactionProductsCount))
+                    {
+                        var record = DataGenerator.GenerateRecord(recordId++, transactionId, store, date);
+                        var statement = ps.Bind(record.Id, record.TransactionId, record.Date, record.Store, record.Product, record.Price, record.Quantity);
 
-                    if (counter % 1000 == 0) Console.WriteLine($"{counter * 100 / total}% are done...");
+                        var rs = session.Execute(statement);
+                    }
+
+                    if (transactionId % 1000 == 0) Console.WriteLine($"{transactionId * 100 / total}% are done...");
                 }
+            }
+        }
+
+        public int GetTotalRowCount()
+        {
+            using (var session = Connect())
+            {
+                var mapper = new Mapper(session);
+
+                var query = @$"SELECT COUNT (*)
+                               FROM {TABLE_NAME};";
+
+                return mapper.Single<int>(query);
             }
         }
 
@@ -88,7 +111,7 @@ namespace Cassandra.Repository
                 var mapper = new Mapper(session);
                 var query = @$"SELECT id, date, store, product, price, quantity
                                FROM {TABLE_NAME}
-                               WHERE date > ? AND date < ?
+                               WHERE date >= ? AND date <= ?
                                ALLOW FILTERING;";
 
                 var records = mapper.Fetch<Record>(query, from, till);
@@ -104,10 +127,6 @@ namespace Cassandra.Repository
                 var mapper = new Mapper(session);
                 var query = @$"SELECT SUM (quantity)
                                FROM {TABLE_NAME};";
-
-                //var values = mapper.Fetch<decimal>(query);
-
-                //return values.Aggregate((a, b) => a + b);
 
                 return mapper.Single<decimal>(query);
             }
@@ -134,7 +153,7 @@ namespace Cassandra.Repository
                 var mapper = new Mapper(session);
                 var query = @$"SELECT price, quantity
                                FROM {TABLE_NAME}
-                               WHERE date > ? AND date < ?
+                               WHERE date >= ? AND date <= ?
                                ALLOW FILTERING;";
                 var ps = session.Prepare(query);
                 var statement = ps.Bind(from, till);
@@ -151,14 +170,10 @@ namespace Cassandra.Repository
                 var mapper = new Mapper(session);
                 var query = @$"SELECT SUM (quantity)
                                FROM {TABLE_NAME}
-                               WHERE date > ? AND date < ?
+                               WHERE date >= ? AND date <= ?
                                 AND store = ?
                                 AND product = ?
                                ALLOW FILTERING;";
-
-                //var values = mapper.Fetch<decimal>(query, from, till, store, product);
-
-                //return values.Aggregate((a, b) => a + b);
 
                 return mapper.Single<decimal>(query, from, till, store, product);
             }
@@ -171,7 +186,7 @@ namespace Cassandra.Repository
                 var mapper = new Mapper(session);
                 var query = @$"SELECT SUM (quantity)
                                FROM {TABLE_NAME}
-                               WHERE date > ? AND date < ?
+                               WHERE date >= ? AND date <= ?
                                     AND product = ?
                                ALLOW FILTERING;";
 
@@ -180,6 +195,54 @@ namespace Cassandra.Repository
                 //return values.Aggregate((a, b) => a + b);
 
                 return mapper.Single<decimal>(query, from, till, product);
+            }
+        }
+
+        public IDictionary<string, decimal> GetTotalPriceByStores(DateTime from, DateTime till)
+        {
+            using (var session = Connect())
+            {
+                var mapper = new Mapper(session);
+                var query = @$"SELECT store, price, quantity
+                               FROM {TABLE_NAME}
+                               WHERE date >= ? AND date <= ?
+                               ALLOW FILTERING;";
+                var ps = session.Prepare(query);
+                var statement = ps.Bind(from, till);
+                var rs = session.Execute(statement);
+
+                var grouped = new Dictionary<string, List<Row>>();
+
+                foreach (var row in rs)
+                {
+                    var store = row.GetValue<string>("store");
+
+                    if (grouped.ContainsKey(store))
+                    {
+                        grouped[store].Add(row);
+                    }
+                    else
+                    {
+                        grouped.Add(store, new List<Row>());
+                    }
+                }
+
+                var aggregated = new Dictionary<string, decimal>();
+
+                foreach (var store in grouped.Keys)
+                {
+                    aggregated.Add(store, grouped[store].Aggregate(new decimal(0), (a, b) => a + b.GetValue<decimal>("price") * b.GetValue<decimal>("quantity")));
+                }
+
+                return aggregated;
+            }
+        }
+
+        public void GetPurchasedTogetherProductsBy2()
+        {
+            using (var session = Connect())
+            {
+                var query = @$"";
             }
         }
 

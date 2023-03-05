@@ -2,14 +2,14 @@
 using DB.SharedUtils;
 using static DB.SharedUtils.Display;
 
-namespace HBase.Example
+namespace DB.Example
 {
     internal class Program
     {
-        private const int TOTAL_RECORDS = 10000;
+        private const int TOTAL_TRANSACTIONS = 10000;
 
         private static DateTime FROM = new DateTime(2017, 01, 01);
-        private static DateTime TILL = new DateTime(2017, 12, 31);
+        private static DateTime TILL = new DateTime(2017, 06, 30);
 
         static async Task Main(string[] args)
         {
@@ -18,7 +18,7 @@ namespace HBase.Example
 
         private static void RunCassandra()
         {
-            Console.WriteLine($"Cassandra example: {TOTAL_RECORDS} records data set.");
+            Console.WriteLine($"Cassandra example: {TOTAL_TRANSACTIONS} transactions data set.");
 
             var watch = new Watch();
             var repo = new DataProvider();
@@ -30,9 +30,12 @@ namespace HBase.Example
             //repo.CreateTable();
 
             //watch.Start();
-            //Console.WriteLine($"Seeding data of {TOTAL_RECORDS} records...");
-            //repo.SeedData(TOTAL_RECORDS);
+            //Console.WriteLine($"Seeding data of {TOTAL_TRANSACTIONS} transactions...");
+            //repo.SeedData(TOTAL_TRANSACTIONS);
             //watch.Stop();
+
+            var totalRows = repo.GetTotalRowCount();
+            Console.WriteLine($"Data set contains {totalRows} records...");
 
             watch.Start();
             Console.WriteLine("Reading data range...");
@@ -72,6 +75,15 @@ namespace HBase.Example
             Console.Write($"   5. Calculating total quantity of {product} sold in all stores for period {FROM.ToShortDateString()} - {TILL.ToShortDateString()}: ");
             result = repo.GetTotalQuantity(product, FROM, TILL);
             Console.WriteLine(result);
+            watch.Stop();
+
+            watch.Start();
+            Console.WriteLine($"   6. Calculating total price by stores for period {FROM.ToShortDateString()} - {TILL.ToShortDateString()}: ");
+            var aggregatedPrices = repo.GetTotalPriceByStores(FROM, TILL);
+            foreach (var resultStore in aggregatedPrices.Keys)
+            {
+                Console.WriteLine($"     - Store {resultStore}: {aggregatedPrices[resultStore]};");
+            }
             watch.Stop();
         }
     }

@@ -4,6 +4,8 @@
     {
         public int Id { get; set; }
 
+        public int TransactionId { get; set; }
+
         public DateTime Date { get; set; }
 
         public string Store { get; set; }
