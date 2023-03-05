@@ -18,7 +18,8 @@ request(`${host}/employees/proto`, { json: true }, (err, res, body) => {
 request(`${host}/employees/proto`, { json: true }, (err, res, body) => {
   if (err) { return console.log(err); }
 
-  const employee = Schema.Employee.deserializeBinary(body);
+  const employees = Schema.Employees.deserializeBinary(body);
 
-  console.log('Decoded protobuf data: ', employee.toObject());
+  console.log('Decoded protobuf data: ');
+  console.table(employees.toObject().employeesList);
 });
