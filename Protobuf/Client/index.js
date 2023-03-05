@@ -1,13 +1,24 @@
 const request = require('request');
+const Schema = require('./employees_pb');
 
-request('http://127.0.0.1:5098/employees', { json: true }, (err, res, body) => {
+const host = 'http://127.0.0.1:5098';
+
+request(`${host}/employees`, { json: true }, (err, res, body) => {
   if (err) { return console.log(err); }
 
   console.table(body);
 });
 
-request('http://127.0.0.1:5098/employees/proto', { json: true }, (err, res, body) => {
+request(`${host}/employees/proto`, { json: true }, (err, res, body) => {
   if (err) { return console.log(err); }
 
-  console.table(body);
+  console.log('Encoded protobuf data: ', body);
+});
+
+request(`${host}/employees/proto`, { json: true }, (err, res, body) => {
+  if (err) { return console.log(err); }
+
+  const employee = Schema.Employee.deserializeBinary(body);
+
+  console.log('Decoded protobuf data: ', employee.toObject());
 });

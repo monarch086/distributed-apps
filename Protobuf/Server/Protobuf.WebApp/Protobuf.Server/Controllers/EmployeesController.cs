@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Protobuf.Server.DTO;
+using Google.Protobuf;
+using static DistributedSystems.Proto.Employee;
 
 namespace Protobuf.Server.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    //application/x-protobuf
     public class EmployeesController : ControllerBase
     {
         [HttpGet]
@@ -23,12 +24,22 @@ namespace Protobuf.Server.Controllers
         [HttpGet("proto")]
         public IActionResult GetEmployeesProto()
         {
-            var employees = new Employee[] {
-                new Employee { Id = 4, Name = "Denys", Salary = 4000 },
-                new Employee { Id = 5, Name = "Mykhailo", Salary = 5000 }
-            };
+            //var employees = new Tutorial.Employees();
+            //new Tutorial.Employee { Id = 4, Name = "Denys", Salary = 4000 },
+            //new Tutorial.Employee { Id = 5, Name = "Mykhailo", Salary = 5000 }
 
-            return Ok(employees);
+            var employee = new DistributedSystems.Proto.Employee { Id = 4, Name = "Denys", Salary = 4000 };
+            //{
+            //    new DistributedSystems.Proto.Employee { Id = 4, Name = "Denys", Salary = 4000 },
+            //    new DistributedSystems.Proto.Employee { Id = 5, Name = "Mykhailo", Salary = 5000 }
+            //};
+
+            using (var output = new MemoryStream())
+            {
+                employee.WriteTo(output);
+
+                return Ok(output.ToArray());
+            }
         }
     }
 }
