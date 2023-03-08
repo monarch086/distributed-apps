@@ -248,43 +248,46 @@ namespace Cassandra.Repository
                                WHERE date >= ? AND date <= ?
                                ALLOW FILTERING;";
 
-                //var records = mapper.Fetch<Record>(query, from, till).ToList();
-
                 var ps = session.Prepare(query);
                 var statement = ps.Bind(from, till);
-                var rs = session.Execute(statement);
+                var rowset = session.Execute(statement);
 
-                var groupedByTransaction = new Dictionary<int, List<string>>();
+                var transactions = GroupInTransactions(rowset);
 
-                foreach (var row in rs)
+                var pairs = transactions.Values.SelectMany(products => ConvertTransactionToPairs(products));
+
+                var countedPairs = CountAndGroupElements(pairs);
+
+                var sortedPairs = Order(countedPairs);
+
+                var top10 = sortedPairs.Take(10);
+
+                foreach (var pair in top10)
                 {
-                    var transaction = row.GetValue<int>("transactionid");
-
-                    if (groupedByTransaction.ContainsKey(transaction))
-                    {
-                        groupedByTransaction[transaction].Add(row.GetValue<string>("product"));
-                    }
-                    else
-                    {
-                        groupedByTransaction.Add(transaction, new List<string>() { row.GetValue<string>("product") });
-                    }
-                }
-
-                var pairs = groupedByTransaction.Values.SelectMany(products => ConvertTransactionToPairs(products));
-
-                var countedPairs = new Dictionary<string, int>();
-
-                foreach (var pair in pairs)
-                {
-                    if (countedPairs.ContainsKey(pair)) { countedPairs[pair]++; }
-                    else { countedPairs.Add(pair, 1); }
-                }
-
-                foreach (var key in countedPairs.Keys)
-                {
-                    Console.WriteLine($"    - {key}: {countedPairs[key]}.");
+                    Console.WriteLine($"    - {pair.Key}: {pair.Value}.");
                 }
             }
+        }
+
+        private Dictionary<int, List<string>> GroupInTransactions(RowSet rowset)
+        {
+            var transactions = new Dictionary<int, List<string>>();
+
+            foreach (var row in rowset)
+            {
+                var transaction = row.GetValue<int>("transactionid");
+
+                if (transactions.ContainsKey(transaction))
+                {
+                    transactions[transaction].Add(row.GetValue<string>("product"));
+                }
+                else
+                {
+                    transactions.Add(transaction, new List<string>() { row.GetValue<string>("product") });
+                }
+            }
+
+            return transactions;
         }
 
         private IList<string> ConvertTransactionToPairs(IList<string> products)
@@ -303,6 +306,24 @@ namespace Cassandra.Repository
             }
 
             return pairs;
+        }
+
+        private Dictionary<string, int> CountAndGroupElements(IEnumerable<string> elements)
+        {
+            var countedGroups = new Dictionary<string, int>();
+
+            foreach (var element in elements)
+            {
+                if (countedGroups.ContainsKey(element)) { countedGroups[element]++; }
+                else { countedGroups.Add(element, 1); }
+            }
+
+            return countedGroups;
+        }
+
+        private IOrderedEnumerable<KeyValuePair<string, int>> Order(Dictionary<string, int> groups)
+        {
+            return groups.OrderByDescending(keyValue => keyValue.Value);
         }
 
         private ISession Connect()
