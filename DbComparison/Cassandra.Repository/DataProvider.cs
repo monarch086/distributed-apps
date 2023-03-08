@@ -116,7 +116,7 @@ namespace Cassandra.Repository
 
                 var records = mapper.Fetch<Record>(query, from, till);
 
-                return records;
+                return records.ToList();
             }
         }
 
@@ -238,12 +238,71 @@ namespace Cassandra.Repository
             }
         }
 
-        public void GetPurchasedTogetherProductsBy2()
+        public void GetProductsPurchasedBy2(DateTime from, DateTime till)
         {
             using (var session = Connect())
             {
-                var query = @$"";
+                var mapper = new Mapper(session);
+                var query = @$"SELECT transactionid, product
+                               FROM {TABLE_NAME}
+                               WHERE date >= ? AND date <= ?
+                               ALLOW FILTERING;";
+
+                //var records = mapper.Fetch<Record>(query, from, till).ToList();
+
+                var ps = session.Prepare(query);
+                var statement = ps.Bind(from, till);
+                var rs = session.Execute(statement);
+
+                var groupedByTransaction = new Dictionary<int, List<string>>();
+
+                foreach (var row in rs)
+                {
+                    var transaction = row.GetValue<int>("transactionid");
+
+                    if (groupedByTransaction.ContainsKey(transaction))
+                    {
+                        groupedByTransaction[transaction].Add(row.GetValue<string>("product"));
+                    }
+                    else
+                    {
+                        groupedByTransaction.Add(transaction, new List<string>() { row.GetValue<string>("product") });
+                    }
+                }
+
+                var pairs = groupedByTransaction.Values.SelectMany(products => ConvertTransactionToPairs(products));
+
+                var countedPairs = new Dictionary<string, int>();
+
+                foreach (var pair in pairs)
+                {
+                    if (countedPairs.ContainsKey(pair)) { countedPairs[pair]++; }
+                    else { countedPairs.Add(pair, 1); }
+                }
+
+                foreach (var key in countedPairs.Keys)
+                {
+                    Console.WriteLine($"    - {key}: {countedPairs[key]}.");
+                }
             }
+        }
+
+        private IList<string> ConvertTransactionToPairs(IList<string> products)
+        {
+            var sortedProducts = products.OrderBy(p => p);
+
+            var pairs = new List<string>();
+
+            foreach (var product1 in sortedProducts)
+            {
+                foreach (var product2 in sortedProducts)
+                {
+                    if (product1 != product2)
+                        pairs.Add($"{product1}, {product2}");
+                }
+            }
+
+            return pairs;
         }
 
         private ISession Connect()

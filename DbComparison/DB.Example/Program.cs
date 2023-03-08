@@ -9,7 +9,7 @@ namespace DB.Example
         private const int TOTAL_TRANSACTIONS = 10000;
 
         private static DateTime FROM = new DateTime(2017, 01, 01);
-        private static DateTime TILL = new DateTime(2017, 06, 30);
+        private static DateTime TILL = new DateTime(2018, 06, 30);
 
         static async Task Main(string[] args)
         {
@@ -37,12 +37,12 @@ namespace DB.Example
             var totalRows = repo.GetTotalRowCount();
             Console.WriteLine($"Data set contains {totalRows} records...");
 
-            watch.Start();
-            Console.WriteLine("Reading data range...");
-            var records = repo.SelectRange(FROM, TILL);
-            Console.WriteLine($"Selected {records.Count()} records.");
-            watch.Stop();
-            records.Print();
+            //watch.Start();
+            //Console.WriteLine("Reading data range...");
+            //var records = repo.SelectRange(FROM, TILL);
+            //Console.WriteLine($"Selected {records.Count()} records.");
+            //watch.Stop();
+            //records.Print();
 
             watch.Start();
             Console.Write("   1. Calculating total quantity: ");
@@ -84,6 +84,11 @@ namespace DB.Example
             {
                 Console.WriteLine($"     - Store {resultStore}: {aggregatedPrices[resultStore]};");
             }
+            watch.Stop();
+
+            watch.Start();
+            Console.WriteLine($"   7. Calculating products mostly purchased by 2 for period {FROM.ToShortDateString()} - {TILL.ToShortDateString()}: ");
+            repo.GetProductsPurchasedBy2(FROM, TILL);
             watch.Stop();
         }
     }

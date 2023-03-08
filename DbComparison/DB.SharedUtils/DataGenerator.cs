@@ -7,7 +7,7 @@ namespace DB.SharedUtils
         public string[] STORES = new string[] { "A", "B", "C", "D" };
 
         private Random Rnd => new Random();
-        private string[] products = new string[] { "bread", "milk", "eggs", "meat" };
+        private string[] products = new string[] { "bread", "milk", "eggs", "meat", "cherry", "ice-cream", "yoghurt", "apples", "bananas", "water", "salt", "sugar", "soap" };
         private int[] months = Enumerable.Range(1, 12).ToArray();
         private int[] days = Enumerable.Range(1, 28).ToArray();
         private int[] hours = Enumerable.Range(0, 23).ToArray();

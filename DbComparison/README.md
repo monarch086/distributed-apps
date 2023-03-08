@@ -3,6 +3,5 @@ App for comparing time of CRUD operations on different databases (Cassandra, Pos
 
 ## Run
 ```
-cd \Data\Playground\databases\DbComparison
-dotnet DB.Example\bin\Debug\net6.0\DB.Example.dll
+dotnet run --project DB.Example\DB.Example.csproj
 ```
