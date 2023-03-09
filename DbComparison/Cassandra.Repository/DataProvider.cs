@@ -190,10 +190,6 @@ namespace Cassandra.Repository
                                     AND product = ?
                                ALLOW FILTERING;";
 
-                //var values = mapper.Fetch<decimal>(query, from, till, product);
-
-                //return values.Aggregate((a, b) => a + b);
-
                 return mapper.Single<decimal>(query, from, till, product);
             }
         }

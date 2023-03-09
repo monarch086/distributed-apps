@@ -1,6 +1,7 @@
 ﻿using DataModel;
 using DB.SharedUtils;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace Pg.Repository
 {
@@ -117,20 +118,84 @@ namespace Pg.Repository
             }
         }
 
-        //public IDictionary<string, decimal> GetTotalPriceByStores(DateTime from, DateTime till)
-        //{
-        //    using (var context = new ProductsDbContext())
-        //    {
+        public IDictionary<string, decimal> GetTotalPriceByStores(DateTime from, DateTime till)
+        {
+            using (var context = new ProductsDbContext())
+            {
+                var results = new Dictionary<string, decimal>();
 
-        //    }
-        //}
+                using (var command = context.Database.GetDbConnection().CreateCommand())
+                {
+                    var query =
+                        "SELECT \"Store\", SUM(\"Price\" * \"Quantity\") AS income " +
+                        "FROM public.\"Records\" " +
+                        $"WHERE \"Date\" >= '{from.ToString("o")}' AND \"Date\" <= '{till.ToString("o")}' " +
+                        "GROUP BY \"Store\";";
+                    command.CommandText = query;
+                    command.CommandType = CommandType.Text;
 
-        //public IEnumerable<KeyValuePair<string, int>> GetProductsPurchasedBy2(DateTime from, DateTime till)
-        //{
-        //    using (var context = new ProductsDbContext())
-        //    {
+                    context.Database.OpenConnection();
 
-        //    }
-        //}
+                    using (var result = command.ExecuteReader())
+                    {
+                        while (result.Read())
+                        {
+                            results.Add(result.GetString("Store"), result.GetDecimal("income"));
+                        }
+                    }
+
+                    return results;
+                }
+            }
+        }
+
+        public IEnumerable<KeyValuePair<string, int>> GetProductsPurchasedBy2(DateTime from, DateTime till)
+        {
+            using (var context = new ProductsDbContext())
+            {
+                var results = new List<KeyValuePair<string, int>>();
+
+                using (var command = context.Database.GetDbConnection().CreateCommand())
+                {
+                    var query =
+                        "WITH order_pairs AS( " +
+                        "SELECT (CONCAT(pg1.\"Product\", ', ', pg2.\"Product\")) AS items, pg1.\"TransactionId\"" +
+                        "FROM " +
+                        "(SELECT DISTINCT \"Product\", \"TransactionId\" " +
+                        "FROM public.\"Records\") AS pg1 " +
+                        "JOIN " +
+                        "(SELECT DISTINCT \"Product\", \"TransactionId\" " +
+                        "FROM public.\"Records\") AS pg2 " +
+                        "ON " +
+                        "(" +
+                            "pg1.\"TransactionId\" = pg2.\"TransactionId\" AND " +
+                            "pg1.\"Product\" != pg2.\"Product\" AND " +
+                            "pg1.\"Product\" < pg2.\"Product\" " +
+                        ")" +
+                    ")" +
+
+                    "SELECT items, COUNT(*) AS frequency " +
+                    "FROM order_pairs " +
+                    "GROUP by items " +
+                    "ORDER BY frequency DESC " +
+                    "LIMIT 10;";
+
+                    command.CommandText = query;
+                    command.CommandType = CommandType.Text;
+
+                    context.Database.OpenConnection();
+
+                    using (var result = command.ExecuteReader())
+                    {
+                        while (result.Read())
+                        {
+                            results.Add(new KeyValuePair<string, int>(result.GetString("items"), result.GetInt32("frequency")));
+                        }
+                    }
+
+                    return results;
+                }
+            }
+        }
     }
 }

@@ -21,8 +21,8 @@ namespace DB.Example
             //repo.CreateTable();
 
             //watch.Start();
-            //Console.WriteLine($"Seeding data of {TOTAL_TRANSACTIONS} transactions...");
-            //repo.SeedData(TOTAL_TRANSACTIONS);
+            //Console.WriteLine($"Seeding data of {transactionsCount} transactions...");
+            //repo.SeedData(transactionsCount);
             //watch.Stop();
 
             var totalRows = repo.GetTotalRowCount();
