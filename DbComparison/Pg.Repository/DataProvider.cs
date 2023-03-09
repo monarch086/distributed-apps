@@ -6,13 +6,7 @@ namespace Pg.Repository
 {
     public class DataProvider
     {
-        //private ProductsDbContext _context;
         private readonly DataGenerator _dataGenerator = new DataGenerator();
-
-        public DataProvider()
-        {
-            //_context = new ProductsDbContext();
-        }
 
         public void Init()
         {
@@ -72,5 +66,71 @@ namespace Pg.Repository
                     .ToArray();
             }
         }
+
+        public decimal GetTotalQuantity()
+        {
+            using (var context = new ProductsDbContext())
+            {
+                return context.Records.Sum(r => r.Quantity);
+            }
+        }
+
+        public decimal GetTotalPrice()
+        {
+            using (var context = new ProductsDbContext())
+            {
+                return context.Records.ToArray().Aggregate(new decimal(0), (a, b) => a + b.Price * b.Quantity);
+            }
+        }
+
+        public decimal GetTotalPrice(DateTime from, DateTime till)
+        {
+            using (var context = new ProductsDbContext())
+            {
+                return context.Records
+                    .Where(r => r.Date >= from && r.Date <= till)
+                    .ToArray()
+                    .Aggregate(new decimal(0), (a, b) => a + b.Price * b.Quantity);
+            }
+        }
+
+        public decimal GetTotalQuantity(string store, string product, DateTime from, DateTime till)
+        {
+            using (var context = new ProductsDbContext())
+            {
+                return context.Records
+                    .Where(r => r.Date >= from && r.Date <= till
+                                && r.Store == store
+                                && r.Product == product)
+                    .Sum(r => r.Quantity);
+            }
+        }
+
+        public decimal GetTotalQuantity(string product, DateTime from, DateTime till)
+        {
+            using (var context = new ProductsDbContext())
+            {
+                return context.Records
+                    .Where(r => r.Date >= from && r.Date <= till
+                                && r.Product == product)
+                    .Sum(r => r.Quantity);
+            }
+        }
+
+        //public IDictionary<string, decimal> GetTotalPriceByStores(DateTime from, DateTime till)
+        //{
+        //    using (var context = new ProductsDbContext())
+        //    {
+
+        //    }
+        //}
+
+        //public IEnumerable<KeyValuePair<string, int>> GetProductsPurchasedBy2(DateTime from, DateTime till)
+        //{
+        //    using (var context = new ProductsDbContext())
+        //    {
+
+        //    }
+        //}
     }
 }
