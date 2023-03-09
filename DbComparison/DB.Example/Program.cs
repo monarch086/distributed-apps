@@ -88,7 +88,29 @@ namespace DB.Example
 
             watch.Start();
             Console.WriteLine($"   7. Calculating products mostly purchased by 2 for period {FROM.ToShortDateString()} - {TILL.ToShortDateString()}: ");
-            repo.GetProductsPurchasedBy2(FROM, TILL);
+            var top10 = repo.GetProductsPurchasedBy2(FROM, TILL);
+            foreach (var pair in top10)
+            {
+                Console.WriteLine($"    - {pair.Key}: {pair.Value}.");
+            }
+            watch.Stop();
+
+            watch.Start();
+            Console.WriteLine($"   8. Calculating products mostly purchased by 3 for period {FROM.ToShortDateString()} - {TILL.ToShortDateString()}: ");
+            top10 = repo.GetProductsPurchasedBy3(FROM, TILL);
+            foreach (var pair in top10)
+            {
+                Console.WriteLine($"    - {pair.Key}: {pair.Value}.");
+            }
+            watch.Stop();
+
+            watch.Start();
+            Console.WriteLine($"   9. Calculating products mostly purchased by 4 for period {FROM.ToShortDateString()} - {TILL.ToShortDateString()}: ");
+            top10 = repo.GetProductsPurchasedBy4(FROM, TILL);
+            foreach (var pair in top10)
+            {
+                Console.WriteLine($"    - {pair.Key}: {pair.Value}.");
+            }
             watch.Stop();
         }
     }

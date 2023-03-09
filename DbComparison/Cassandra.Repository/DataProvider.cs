@@ -1,6 +1,7 @@
 ﻿using Cassandra.Mapping;
 using DataModel;
 using DB.SharedUtils;
+using System.Collections;
 
 namespace Cassandra.Repository
 {
@@ -238,7 +239,7 @@ namespace Cassandra.Repository
             }
         }
 
-        public void GetProductsPurchasedBy2(DateTime from, DateTime till)
+        public IEnumerable<KeyValuePair<string, int>> GetProductsPurchasedBy2(DateTime from, DateTime till)
         {
             using (var session = Connect())
             {
@@ -260,12 +261,59 @@ namespace Cassandra.Repository
 
                 var sortedPairs = Order(countedPairs);
 
-                var top10 = sortedPairs.Take(10);
+                return sortedPairs.Take(10);
+            }
+        }
 
-                foreach (var pair in top10)
-                {
-                    Console.WriteLine($"    - {pair.Key}: {pair.Value}.");
-                }
+        public IEnumerable<KeyValuePair<string, int>> GetProductsPurchasedBy3(DateTime from, DateTime till)
+        {
+            using (var session = Connect())
+            {
+                var mapper = new Mapper(session);
+                var query = @$"SELECT transactionid, product
+                               FROM {TABLE_NAME}
+                               WHERE date >= ? AND date <= ?
+                               ALLOW FILTERING;";
+
+                var ps = session.Prepare(query);
+                var statement = ps.Bind(from, till);
+                var rowset = session.Execute(statement);
+
+                var transactions = GroupInTransactions(rowset);
+
+                var tripples = transactions.Values.SelectMany(products => ConvertTransactionToTripples(products));
+
+                var countedTripples = CountAndGroupElements(tripples);
+
+                var sortedPairs = Order(countedTripples);
+
+                return sortedPairs.Take(10);
+            }
+        }
+
+        public IEnumerable<KeyValuePair<string, int>> GetProductsPurchasedBy4(DateTime from, DateTime till)
+        {
+            using (var session = Connect())
+            {
+                var mapper = new Mapper(session);
+                var query = @$"SELECT transactionid, product
+                               FROM {TABLE_NAME}
+                               WHERE date >= ? AND date <= ?
+                               ALLOW FILTERING;";
+
+                var ps = session.Prepare(query);
+                var statement = ps.Bind(from, till);
+                var rowset = session.Execute(statement);
+
+                var transactions = GroupInTransactions(rowset);
+
+                var quads = transactions.Values.SelectMany(products => ConvertTransactionToQuads(products));
+
+                var countedQuads = CountAndGroupElements(quads);
+
+                var sortedPairs = Order(countedQuads);
+
+                return sortedPairs.Take(10);
             }
         }
 
@@ -290,9 +338,9 @@ namespace Cassandra.Repository
             return transactions;
         }
 
-        private IList<string> ConvertTransactionToPairs(IList<string> products)
+        private IEnumerable<string> ConvertTransactionToPairs(IList<string> products)
         {
-            var sortedProducts = products.OrderBy(p => p);
+            var sortedProducts = products.OrderBy(p => p).ToArray();
 
             var pairs = new List<string>();
 
@@ -300,9 +348,90 @@ namespace Cassandra.Repository
             {
                 foreach (var product2 in sortedProducts)
                 {
-                    if (product1 != product2)
-                        pairs.Add($"{product1}, {product2}");
+                    if (product1 == product2 || string.Compare(product1, product2) > 0)
+                        continue;
+
+                    pairs.Add($"{product1}, {product2}");
                 }
+            }
+
+            return pairs;
+        }
+
+        private IEnumerable<string> ConvertTransactionToTripples(IList<string> products)
+        {
+            if (products.Count() < 3) return Enumerable.Empty<string>();
+
+            var sortedProducts = products.OrderBy(p => p).ToArray();
+
+            var pairs = new List<string>();
+
+            foreach (var product1 in sortedProducts)
+            {
+                foreach (var product2 in sortedProducts)
+                {
+                    foreach (var product3 in sortedProducts)
+                    {
+                        if (product1 == product2 ||
+                            product1 == product3 ||
+                            product2 == product3 ||
+                            string.Compare(product1, product2) > 0 ||
+                            string.Compare(product2, product3) > 0 ||
+                            string.Compare(product1, product3) > 0
+                            ) continue;
+
+                            pairs.Add($"{product1}, {product2}, {product3}");
+                    }
+                }
+            }
+
+            return pairs;
+        }
+
+        private IEnumerable<string> ConvertTransactionToQuads(IList<string> products)
+        {
+            if (products.Count() < 4) return Enumerable.Empty<string>();
+
+            var sortedProducts = products.OrderBy(p => p).ToArray();
+
+            var pairs = new List<string>();
+
+            var productsSet = new HashSet<string>();
+
+            foreach (var product1 in sortedProducts)
+            {
+                if (productsSet.Contains(product1)) continue;
+                productsSet.Add(product1);
+
+                foreach (var product2 in sortedProducts)
+                {
+                    if (productsSet.Contains(product2)) continue;
+                    productsSet.Add(product2);
+
+                    foreach (var product3 in sortedProducts)
+                    {
+                        if (productsSet.Contains(product3)) continue;
+                        productsSet.Add(product3);
+
+                        foreach (var product4 in sortedProducts)
+                        {
+                            if (productsSet.Contains(product4)) continue;
+
+                            if (string.Compare(product1, product2) > 0 ||
+                                string.Compare(product2, product3) > 0 ||
+                                string.Compare(product3, product4) > 0
+                            ) continue;
+
+                            pairs.Add($"{product1}, {product2}, {product3}, {product4}");
+                        }
+
+                        productsSet.Remove(product3);
+                    }
+
+                    productsSet.Remove(product2);
+                }
+
+                productsSet.Remove(product1);
             }
 
             return pairs;
