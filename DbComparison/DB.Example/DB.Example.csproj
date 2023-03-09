@@ -12,6 +12,7 @@
     <ProjectReference Include="..\DB.DataModel\DB.DataModel.csproj" />
     <ProjectReference Include="..\DB.SharedUtils\DB.SharedUtils.csproj" />
     <ProjectReference Include="..\HBase.Repository\HBase.Repository.csproj" />
+    <ProjectReference Include="..\Pg.Repository\Pg.Repository.csproj" />
   </ItemGroup>
 
 </Project>

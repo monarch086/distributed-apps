@@ -1,6 +1,5 @@
 ﻿using Cassandra.Repository;
 using DB.SharedUtils;
-using static DB.SharedUtils.Display;
 
 namespace DB.Example
 {
@@ -14,11 +13,15 @@ namespace DB.Example
         static async Task Main(string[] args)
         {
             RunCassandra();
+
+            RunPostgres();
         }
 
         private static void RunCassandra()
         {
-            Console.WriteLine($"Cassandra example: {TOTAL_TRANSACTIONS} transactions data set.");
+            Console.WriteLine("######################################################################");
+            Console.WriteLine($"### Cassandra example: {TOTAL_TRANSACTIONS} transactions data set. ###");
+            Console.WriteLine("######################################################################");
 
             var watch = new Watch();
             var repo = new DataProvider();
@@ -112,6 +115,38 @@ namespace DB.Example
                 Console.WriteLine($"    - {pair.Key}: {pair.Value}.");
             }
             watch.Stop();
+        }
+
+        private static void RunPostgres()
+        {
+            Console.WriteLine("#####################################################################");
+            Console.WriteLine($"### Postgres example: {TOTAL_TRANSACTIONS} transactions data set. ###");
+            Console.WriteLine("#####################################################################");
+
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+            var watch = new Watch();
+            var repo = new Pg.Repository.DataProvider();
+
+            repo.Init();
+
+            watch.Start();
+            Console.WriteLine("Deleting all records...");
+            repo.DeleteAll();
+            Console.WriteLine("Done");
+            watch.Stop();
+
+            watch.Start();
+            Console.WriteLine($"Seeding data of {TOTAL_TRANSACTIONS} transactions...");
+            repo.SeedData(TOTAL_TRANSACTIONS);
+            watch.Stop();
+
+            watch.Start();
+            Console.WriteLine("Reading data range...");
+            var records = repo.SelectRange(FROM, TILL);
+            Console.WriteLine($"Selected {records.Count()} records.");
+            watch.Stop();
+            //records.Print();
         }
     }
 }
