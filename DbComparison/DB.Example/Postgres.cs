@@ -95,14 +95,14 @@ namespace DB.Example
             }
             watch.Stop();
 
-            //watch.Start();
-            //Console.WriteLine($"   9. Calculating products mostly purchased by 4 for period {from.ToShortDateString()} - {till.ToShortDateString()}: ");
-            //top10 = repo.GetProductsPurchasedBy4(from, till);
-            //foreach (var pair in top10)
-            //{
-            //    Console.WriteLine($"    - {pair.Key}: {pair.Value}.");
-            //}
-            //watch.Stop();
+            watch.Start();
+            Console.WriteLine($"   9. Calculating products mostly purchased by 4 for period {from.ToShortDateString()} - {till.ToShortDateString()}: ");
+            top10 = repo.GetProductsPurchasedBy4(from, till);
+            foreach (var pair in top10)
+            {
+                Console.WriteLine($"    - {pair.Key}: {pair.Value}.");
+            }
+            watch.Stop();
         }
     }
 }

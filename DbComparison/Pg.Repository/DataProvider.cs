@@ -257,5 +257,76 @@ namespace Pg.Repository
                 }
             }
         }
+
+        public IEnumerable<KeyValuePair<string, int>> GetProductsPurchasedBy4(DateTime from, DateTime till)
+        {
+            using (var context = new ProductsDbContext())
+            {
+                var results = new List<KeyValuePair<string, int>>();
+
+                using (var command = context.Database.GetDbConnection().CreateCommand())
+                {
+                    var query =
+                    "WITH order_pairs AS( " +
+                        "SELECT (CONCAT(pg1.\"Product\", ', ', pg2.\"Product\", ', ', pg3.\"Product\", ', ', pg4.\"Product\")) AS items, pg1.\"TransactionId\"" +
+                        "FROM " +
+                        "(SELECT DISTINCT \"Product\", \"TransactionId\" " +
+                        "FROM public.\"Records\") AS pg1 " +
+                        "JOIN " +
+                        "(SELECT DISTINCT \"Product\", \"TransactionId\" " +
+                        "FROM public.\"Records\") AS pg2 " +
+                        "ON " +
+                        "(" +
+                            "pg1.\"TransactionId\" = pg2.\"TransactionId\" AND " +
+                            "pg1.\"Product\" != pg2.\"Product\" AND " +
+                            "pg1.\"Product\" < pg2.\"Product\" " +
+                        ")" +
+                        "JOIN " +
+                        "(SELECT DISTINCT \"Product\", \"TransactionId\" " +
+                        "FROM public.\"Records\") AS pg3 " +
+                        "ON " +
+                        "(" +
+                            "pg1.\"TransactionId\" = pg3.\"TransactionId\" AND " +
+                            "pg1.\"Product\" != pg3.\"Product\" AND " +
+                            "pg2.\"Product\" != pg3.\"Product\" AND " +
+                            "pg1.\"Product\" < pg3.\"Product\" AND " +
+                            "pg2.\"Product\" < pg3.\"Product\" " +
+                        ")" +
+                        "JOIN " +
+                        "(SELECT DISTINCT \"Product\", \"TransactionId\" " +
+                        "FROM public.\"Records\") AS pg4 " +
+                        "ON " +
+                        "(" +
+                            "pg1.\"TransactionId\" = pg4.\"TransactionId\" AND " +
+                            "pg1.\"Product\" != pg4.\"Product\" AND " +
+                            "pg2.\"Product\" != pg4.\"Product\" AND " +
+                            "pg3.\"Product\" != pg4.\"Product\" AND " +
+                            "pg3.\"Product\" < pg4.\"Product\" " +
+                        ")" +
+                    ")" +
+
+                    "SELECT items, COUNT(*) AS frequency " +
+                    "FROM order_pairs " +
+                    "GROUP by items " +
+                    "ORDER BY frequency DESC " +
+                    "LIMIT 10;";
+
+                    command.CommandText = query;
+                    command.CommandType = CommandType.Text;
+
+                    context.Database.OpenConnection();
+
+                    using (var result = command.ExecuteReader())
+                    {
+                        while (result.Read())
+                        {
+                            results.Add(new KeyValuePair<string, int>(result.GetString("items"), result.GetInt32("frequency")));
+                        }
+                    }
+
+                    return results;
+                }
+            }
+        }
     }
 }
