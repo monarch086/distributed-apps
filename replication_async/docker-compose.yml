@@ -1,0 +1,30 @@
+version: '3'
+services:
+  pg_primary:
+    image: postgres:13
+    container_name: postgres_primary
+    restart: always
+    volumes:
+        - ./primary/data:/var/lib/postgresql/data
+        - ./primary/postgresql.conf:/etc/postgresql/postgresql.conf
+        - ./primary/pg_hba.conf:/pg_hba.conf
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      - 'POSTGRES_USER=postgres'
+      - 'POSTGRES_PASSWORD=postgres'
+      - 'POSTGRES_DB=postgres'
+  pg_secondary:
+    image: postgres:13
+    container_name: postgres_secondary
+    restart: always
+    volumes:
+        - ./secondary/data:/var/lib/postgresql/data
+        - ./secondary/postgresql.conf:/etc/postgresql/postgresql.conf
+        - ./secondary/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    ports:
+      - "127.0.0.1:5434:5432"
+    environment:
+      - 'POSTGRES_USER=postgres'
+      - 'POSTGRES_PASSWORD=postgres'
+      - 'POSTGRES_DB=postgres'
