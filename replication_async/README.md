@@ -42,10 +42,10 @@ SELECT * FROM pg_stat_replication;
 
 ## Check operations
 
-`docker exec -it pmaster psql -U postgres
+`docker exec -it postgres_primary psql -U postgres
 create table test(id int, t varchar(200));`
 
-`docker exec -it pstandby psql -U postgres
+`docker exec -it postgres_secondary psql -U postgres
 \d test;`
 
 insert into test (id, t) values (1, 'data 1');
