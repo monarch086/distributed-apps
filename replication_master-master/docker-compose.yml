@@ -1,0 +1,14 @@
+version: '3'
+services:
+  node1:
+    image: cassandra
+    container_name: node1
+    ports:
+      - "7001:7000"
+  node2:
+    image: cassandra
+    container_name: node2
+    ports:
+      - "7002:7000"
+    environment:
+      - 'CASSANDRA_SEEDS=node1'
