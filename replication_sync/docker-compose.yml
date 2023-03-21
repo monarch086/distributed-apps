@@ -3,7 +3,7 @@ services:
   pmaster:
     image: postgres:13
     container_name: pmaster
-    restart: always
+    # restart: always
     volumes:
         - ./pmaster_data:/var/lib/postgresql/data
     ports:
@@ -13,7 +13,7 @@ services:
   pstandby:
     image: postgres:13
     container_name: pstandby
-    restart: always
+    # restart: always
     volumes:
         - ./pstandby_data:/var/lib/postgresql/data
     ports:

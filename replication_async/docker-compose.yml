@@ -3,7 +3,7 @@ services:
   pg_primary:
     image: postgres:13
     container_name: postgres_primary
-    restart: always
+    # restart: always
     volumes:
         - ./primary/data:/var/lib/postgresql/data
         - ./primary/postgresql.conf:/etc/postgresql/postgresql.conf
@@ -17,7 +17,7 @@ services:
   pg_secondary:
     image: postgres:13
     container_name: postgres_secondary
-    restart: always
+    # restart: always
     volumes:
         - ./secondary/data:/var/lib/postgresql/data
         - ./secondary/postgresql.conf:/etc/postgresql/postgresql.conf
