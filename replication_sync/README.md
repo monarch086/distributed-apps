@@ -2,6 +2,7 @@
 
 ## Create and setup containers
 
+````bash
 docker network create my-net
 
 docker run --network my-net --name pmaster -p 5432:5432 -v ./pmaster_data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=postgres -d postgres
@@ -9,23 +10,37 @@ docker run --network my-net --name pmaster -p 5432:5432 -v ./pmaster_data:/var/l
 docker run --network my-net --name pstandby -p 5433:5432 -v ./pstandby_data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=postgres -d postgres
 
 docker stop pmaster pstandby
+````
+
+OR
+
+````bash
+docker-compose up
+docker-compose down
+````
 
 ### This is not correct way of copying database - it will throw errors, pg_basebackup should be used instead (see below)
 
+````bash
 copy -R master_data pstandby_data
 
 docker start pmaster pstandby
 
 docker exec -it pmaster psql -U postgres
 select * from pg_stat_replication;
+````
 
 ### Correct way of copying master database
 
-`CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'postgres';
+````SQL
+CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'postgres';
 SELECT * FROM pg_create_physical_replication_slot('replication_slot_slave1');
-SELECT * FROM pg_replication_slots;`
+SELECT * FROM pg_replication_slots;
+````
 
-`docker exec -it pmaster pg_basebackup -D /tmp/postgresslave -S replication_slot_slave1 -X stream -P -U replicator -Fp -R`
+````bash
+docker exec -it pmaster pg_basebackup -D /tmp/postgresslave -S replication_slot_slave1 -X stream -P -U replicator -Fp -R
+````
 
 - copy backup files to pstandby container
 
@@ -47,20 +62,30 @@ SELECT * FROM pg_replication_slots;`
 
 ## Run
 
+````bash
 docker-compose up
+````
 
 ## Check replication
 
+````SQL
 SELECT * FROM pg_replication_slots;
 SELECT * FROM pg_stat_replication;
+````
 
 ## Check operations
 
-`docker exec -it pmaster psql -U postgres
-create table test(id int, t varchar(200));`
+````bash
+docker exec -it pmaster psql -U postgres
+create table test(id int, t varchar(200));
+````
 
-`docker exec -it pstandby psql -U postgres
-\d test;`
+````bash
+docker exec -it pstandby psql -U postgres
+\d test;
+````
 
+````SQL
 insert into test (id, t) values (1, 'data 1');
 select * from test;
+````
